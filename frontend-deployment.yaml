@@ -1,0 +1,83 @@
+# k8s/frontend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: galajay1/upload-medical-codes:latest # Your image name
+        ports:
+        - containerPort: 8501
+        env:
+          # --- Backend URL using Kubernetes Service DNS ---
+          # This one is still set directly as it depends on K8s service name
+          - name: BACKEND_API_URL
+            value: "http://backend-service:8000"
+
+          # --- Load Secrets as Environment Variables ---
+          # Credentials needed by frontend to authenticate with backend API
+          - name: BACKEND_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: medical-coding-secrets
+                key: BACKEND_USERNAME
+          - name: BACKEND_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: medical-coding-secrets
+                key: BACKEND_PASSWORD
+          # Credentials for Streamlit basic auth itself
+          - name: FRONTEND_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: medical-coding-secrets
+                key: FRONTEND_USERNAME
+          - name: FRONTEND_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: medical-coding-secrets
+                key: FRONTEND_PASSWORD
+
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "300m"
+            memory: "256Mi"
+        readinessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 45
+          periodSeconds: 15
+
+---
+# k8s/frontend-service.yaml (No changes needed here)
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+spec:
+  selector:
+    app: frontend
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8501

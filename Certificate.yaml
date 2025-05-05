@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: api-server-tls
+  namespace: istio-system
+spec:
+  secretName: api-server-tls      # This secret will store your TLS certificate
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: app.jkops.me
+  dnsNames:
+  - app.jkops.me
+  - upload.jkops.me
+  - kiali.jkops.me

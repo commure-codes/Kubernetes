@@ -1,0 +1,22 @@
+# upload-vs.yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: upload-vs
+  # namespace: default # Ensure it's in the correct namespace
+spec:
+  hosts:
+  - "upload.jkops.me"
+  gateways:
+  - istio-system/api-server-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        # Use FQDN for robustness
+        host: frontend-service.default.svc.cluster.local
+        port:
+          # Route to the Service port
+          number: 80 # <--- CHANGE THIS

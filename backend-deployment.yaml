@@ -1,0 +1,105 @@
+# k8s/backend-deployment.yaml (Workload Identity - Updated)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      # --- Workload Identity Configuration ---
+      # Specifies the KSA defined in ksa.yaml
+      serviceAccountName: backend-ksa # Must match metadata.name in ksa.yaml
+      # Required node pool setting for Workload Identity
+      nodeSelector:
+        iam.gke.io/gke-metadata-server-enabled: "true"
+      # --- End Workload Identity Configuration ---
+
+      containers:
+      - name: backend
+        image: galajay1/process-medical-codes:latest # Your image name
+        ports:
+        - containerPort: 8000
+        env:
+          # --- Load ALL variables from the Secret ---
+          - name: GOOGLE_PROJECT_ID
+            valueFrom:
+              secretKeyRef:
+                name: medical-coding-secrets
+                key: GOOGLE_PROJECT_ID
+          - name: GOOGLE_LOCATION
+            valueFrom:
+              secretKeyRef:
+                name: medical-coding-secrets
+                key: GOOGLE_LOCATION
+          - name: VERTEX_MODEL_NAME
+            valueFrom:
+              secretKeyRef:
+                name: medical-coding-secrets
+                key: VERTEX_MODEL_NAME
+          - name: PINECONE_ICD_INDEX_NAME
+            valueFrom:
+              secretKeyRef:
+                name: medical-coding-secrets
+                key: PINECONE_ICD_INDEX_NAME
+          - name: PINECONE_CPT_INDEX_NAME
+            valueFrom:
+              secretKeyRef:
+                name: medical-coding-secrets
+                key: PINECONE_CPT_INDEX_NAME
+          - name: PINECONE_ENVIRONMENT
+            valueFrom:
+              secretKeyRef:
+                name: medical-coding-secrets
+                key: PINECONE_ENVIRONMENT
+          - name: BACKEND_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: medical-coding-secrets
+                key: BACKEND_USERNAME
+          - name: BACKEND_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: medical-coding-secrets
+                key: BACKEND_PASSWORD
+          - name: PINECONE_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: medical-coding-secrets
+                key: PINECONE_API_KEY
+
+          # --- GOOGLE_APPLICATION_CREDENTIALS REMOVED ---
+          # Workload Identity handles authentication automatically
+
+        # --- volumeMounts for key file REMOVED ---
+
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
+      # --- volumes section for key file REMOVED ---
+
+---
+# k8s/backend-service.yaml (No changes needed here)
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  selector:
+    app: backend
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
+  type: ClusterIP

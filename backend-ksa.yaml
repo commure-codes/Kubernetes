@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backend-ksa # The name used in the backend deployment's serviceAccountName field
+  namespace: default # Or the namespace you are deploying into
+  annotations:
+    # Link this KSA to the Google Service Account (GSA)
+    # Replace YOUR_GCP_PROJECT_ID and YOUR_GSA_NAME with your actual values
+    iam.gke.io/gcp-service-account: dev-vertex-ai@silicon-works-449817-n7.iam.gserviceaccount.com
+    # Example: iam.gke.io/gcp-service-account: vertex-ai-sa@silicon-works-449817-n7.iam.gserviceaccount.com
